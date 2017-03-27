@@ -2,7 +2,7 @@ import * as moment from 'moment';
 import * as fs from 'fs';
 import * as _ from 'lodash';
 
-var config = require('./config.json');
+var config = require('../config.json');
 
 const MovieDB = require('moviedb')(config.moviedb_key);
 const defaultWatchStatus = "finished";
