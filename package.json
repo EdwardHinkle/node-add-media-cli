@@ -1,0 +1,26 @@
+{
+  "name": "add-media",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./build/index.js",
+  "types": "./build/index.d.ts",
+  "scripts": {
+    "start": "tsc; node ./build/index.js"
+  },
+  "keywords": [
+    "indieweb"
+  ],
+  "author": "Eddie Hinkle (htp://eddiehinkle.com)",
+  "license": "MIT",
+  "dependencies": {
+    "@types/lodash": "^4.14.58",
+    "@types/moment": "^2.13.0",
+    "lodash": "^4.17.4",
+    "moment": "^2.18.1",
+    "moviedb": "^0.2.7"
+  },
+  "devDependencies": {
+    "@types/node": "^7.0.11",
+    "@types/moviedb": "0.0.29"
+  }
+}
