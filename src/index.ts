@@ -283,6 +283,7 @@ function addTv() {
                                 'show_name': showResult.name,
                                 'show_season': seasonId,
                                 'show_episode': episodeId,
+                                'episode_name': episodeInfo.name,
                                 'imdb_id': showIds.imdb_id,
                                 'show_url': showInfo.homepage,
                                 'show_image': `https://image.tmdb.org/t/p/w1280${watchImageUrl}`,
