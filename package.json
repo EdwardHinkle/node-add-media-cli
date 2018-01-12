@@ -5,7 +5,8 @@
   "main": "./build/index.js",
   "types": "./build/index.d.ts",
   "scripts": {
-    "start": "tsc; node ./build/index.js"
+    "start": "npm run build; ./build/index.js",
+    "build": "tsc"
   },
   "keywords": [
     "indieweb"
@@ -18,7 +19,7 @@
     "@types/js-yaml": "^3.5.30",
     "@types/lodash": "^4.14.58",
     "@types/moment": "^2.13.0",
-    "@types/request": "0.0.43",
+    "@types/request": "^2.0.0",
     "cheerio": "^0.22.0",
     "commander": "^2.9.0",
     "js-yaml": "^3.8.4",

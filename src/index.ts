@@ -329,7 +329,7 @@ function saveFile(data) {
     let year = now.format("YYYY");
     let month = now.format("MM");
     let day = now.format("DD");
-    let dataDir = __dirname + '/../../abode-eddie/jekyll/_source';
+    let dataDir = __dirname + '/../../../abode/jekyll/_source';
     
     var postIndex = 1;
     var yearDir = `${dataDir}/_note/${year}`;
