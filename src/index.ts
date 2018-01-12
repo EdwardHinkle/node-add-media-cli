@@ -32,11 +32,13 @@ program.option('-t, --type <type>', 'What type of watch post it is')
   .option('--show-finale', 'Mark this post as a show finale') // TV
   .option('-u, --url <url>', 'The url of the given item') // Podcast/Web Video
   .option('-v, --video <video>', 'The url of the video property') // Podcast/Web Video
+  .option('-mb, --microblog', 'Set that this post should syndicate to microblog')
   .parse(process.argv);
 
 var searchType = program.type;
 var watchStatus = program.status.toLowerCase();
 var watchVisibility = program.private ? 'private' : 'public';
+var syndicateToMicroblog = program.microblog ? true : false;
 var watchContent = program.message ? program.message : '';
 var postCategory = program.category;
 var postDate = program.date || moment();
@@ -308,6 +310,20 @@ function addTv() {
 
 
 function saveFile(data) {
+
+    if (syndicateToMicroblog) {
+        data['feed-syndication'] = true;
+        if (data.properties === undefined) {
+            data.properties = {};
+        }
+        data.properties.syndication = [
+            {
+                'name': 'micro.blog',
+                'icon': 'fa-globe',
+                'url': 'https://micro.blog/EddieHinkle'
+            }
+        ];
+    }
 
     let now = moment(data.date, "YYYY-MM-DD HH:mm:ss ZZ");
     let year = now.format("YYYY");
