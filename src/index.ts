@@ -47,10 +47,6 @@ switch (searchType) {
     case "movie": addMovie(); break;
     case "tv": addTv(); break;
     case "video": addWebVideo(); break;
-    case "podcast": addPodcast(); break;
-    // add like
-    // add reply
-    case 'note': addNote(); break;
 }
 
 function addWebVideo() {
@@ -89,110 +85,6 @@ function addWebVideo() {
 
 }
 
-function addPodcast() {
-
-    var podcastUrl = program.url;
-    if (podcastUrl == undefined) {
-        console.log("Podcast URL is required");
-        return;
-    } else if (podcastUrl.indexOf("overcast.fm") > -1) {
-        console.log("Podcast URL is from overcast.fm");
-        request(podcastUrl, function(error, response, html){
-            if(!error){
-                var $ = cheerio.load(html);
-                
-                var podcastData = {
-                    name: $("head title").text().split(" — ")[0],
-                    url: $("#speedcontrols + div a:first-child").attr("href"),
-                    audio: $("#audioplayer source").attr("src").split("#")[0],
-                    photo: decodeURIComponent($(".fullart").attr("src").split("u=").pop())
-                }
-
-                // Huff Duffer doesn't link back to the original podcast
-                // if (podcastData.url.indexOf("huffduffer.com") > -1) {
-                //     console.log("Contains Huff Duffer");
-                //     request(podcastData.url, function(error, response, html){
-                //         if(!error){
-                //             var $ = cheerio.load(html);
-                            
-                //             // var podcastData = {
-                //             //     title: $("head title").text().split(" — ")[0],
-                //             //     url: $("#speedcontrols + div a:first-child").attr("href"),
-                //             //     audio: $("#audioplayer source").attr("src").split("#")[0],
-                //             //     photo: decodeURIComponent($(".fullart").attr("src").split("u=").pop())
-                //             // }
-
-
-
-                //             console.log(podcastData);
-                //         }
-                //     });
-
-                // }
-
-                createPodcastData(podcastData);
-            }
-        });
-        return;
-    } else {
-
-        createPodcastData({
-            'url': podcastUrl,
-            'audio': '',
-            'name': '',
-            'photo': ''
-        });
-
-    }
-
-}
-
-function addNote() {
-
-    var data = {
-        'date': postDate.format("YYYY-MM-DD HH:mm:ss ZZ"),
-        'layout': 'entry',
-        'title': '',
-        'visibility': watchVisibility,
-        'tags': postCategory,
-        'content': watchContent,
-        'slug': '',
-        'permalink': '/:year/:month/:day/:slug/note/'
-    }
-
-    console.log("Debugging Note");
-    console.log(data)
-
-    saveFile(data);
-
-}
-
-function createPodcastData(podcastProperties) {
-    var data = {
-        'date': postDate.format("YYYY-MM-DD HH:mm:ss ZZ"),
-        'layout': 'post',
-        'title': '',
-        'visibility': watchVisibility,
-        'tags': postCategory,
-        'properties': {
-            'listen-of': {
-                'type': 'h-cite',
-                'properties': podcastProperties
-            },
-            'task-status': watchStatus,
-        },
-        'content': watchContent,
-        'slug': '',
-        'permalink': '/:year/:month/:day/:slug/listen/'
-    }
-
-    console.log("Debugging Podcast");
-    console.log(data);
-    console.log(data.properties['listen-of'].properties);
-
-    saveFile(data);
-}
-
 function addMovie() {
     var watchName, imdbId, watchUrl, watchImageUrl;
     var searchTitle = program.name;
@@ -201,21 +93,25 @@ function addMovie() {
 
         MovieDB.movieInfo({ id: movieResult.id }, (err, movieInfo) => {
 
-            var data = {
-                'layout': 'post',
-                'title': '',
-                'visibility': watchVisibility,
-                'date': postDate.format("YYYY-MM-DD HH:mm:ss ZZ"),
-                'tags': postCategory,
-                'task-status': watchStatus,
-                'movie_name': movieInfo.title,
-                'imdb_id': movieInfo.imdb_id,
-                'movie_url': movieInfo.homepage,
-                'movie_image': `https://image.tmdb.org/t/p/w1280${movieInfo.poster_path}`,
-                'content': watchContent,
-                'slug': '',
-                'permalink': '/:year/:month/:day/:slug/watch/'
-            }
+            let data = {
+                'type': ['h-entry'],
+                'properties': {
+                    'published': postDate.format("YYYY-MM-DD HH:mm:ss ZZ"),
+                    'visibility': watchVisibility,
+                    'category': postCategory,
+                    'watch-of': {
+                        'type': 'h-cite',
+                        'properties': {
+                            'name': movieInfo.title,
+                            'url': movieInfo.homepage,
+                            'photo': `https://image.tmdb.org/t/p/w1280${movieInfo.poster_path}`,
+                            'imdb-id': movieInfo.imdb_id,
+                        }
+                    },
+                    'task-status': watchStatus,
+                    'content': watchContent
+                }
+            };
 
             saveFile(data);
         });
@@ -255,7 +151,7 @@ function addTv() {
         } else if (episodeId == undefined) {
             console.log(showResult.name + " Season " + seasonId + " has the following Episodes");
             MovieDB.tvSeasonInfo({ id: showResult.id, season_number: seasonId }, (err, episodeInfo) => {
-                _.each(episodeInfo.episodes, (episode) => {
+                _.each(episodeInfo.episodes, (episode: any) => {
                     console.log("Episode " + episode.episode_number + ": " + episode.name + " (" + moment(episode.air_date, "YYYY-MM-DD").format("MMM D, Y") + ")");
                 });
             });
@@ -275,28 +171,37 @@ function addTv() {
 
                             watchImageUrl = (seasonInfo.poster_path ? seasonInfo.poster_path : showInfo.poster_path);
 
-                            var data = {
-                                'layout': 'post',
-                                'title': '',
-                                'visibility': watchVisibility,
-                                'date': postDate.format("YYYY-MM-DD HH:mm:ss ZZ"),
-                                'tags': postCategory,
-                                'task-status': watchStatus,
-                                'show_name': showResult.name,
-                                'show_season': seasonId,
-                                'show_episode': episodeId,
-                                'episode_name': episodeInfo.name,
-                                'imdb_id': showIds.imdb_id,
-                                'show_url': showInfo.homepage,
-                                'show_image': `https://image.tmdb.org/t/p/w1280${watchImageUrl}`,
-                                'episode_image': `https://image.tmdb.org/t/p/w1280${episodeInfo.still_path}`,
-                                'content': watchContent,
-                                'slug': '',
-                                'permalink': '/:year/:month/:day/:slug/watch/'
-                            }
+                            let data = {
+                                'type': ['h-entry'],
+                                'properties': {
+                                    'published': postDate.format("YYYY-MM-DD HH:mm:ss ZZ"),
+                                    'visibility': watchVisibility,
+                                    'category': postCategory,
+                                    'watch-of': {
+                                        'type': 'h-cite',
+                                        'properties': {
+                                            'name': showResult.name,
+                                            'url': showInfo.homepage,
+                                            'photo': `https://image.tmdb.org/t/p/w1280${watchImageUrl}`,
+                                            'imdb-id': showIds.imdb_id,
+                                            'episode': {
+                                                'type': 'h-cite',
+                                                'properties': {
+                                                    'name': episodeInfo.name,
+                                                    'photo': `https://image.tmdb.org/t/p/w1280${episodeInfo.still_path}`,
+                                                    'season-number': seasonId,
+                                                    'episode-number': episodeId,
+                                                }
+                                            }
+                                        }
+                                    },
+                                    'task-status': watchStatus,
+                                    'content': watchContent
+                                }
+                            };
 
                             if (watchEpisodeSpecial > "") {
-                                data[watchEpisodeSpecial] = true;
+                                data.properties["watch-of"].properties.episode.properties["special-episode"] = watchEpisodeSpecial;
                             }
 
                             saveFile(data);
@@ -312,10 +217,10 @@ function addTv() {
 function saveFile(data) {
 
     if (syndicateToMicroblog) {
-        data['feed-syndication'] = true;
         if (data.properties === undefined) {
             data.properties = {};
         }
+        data.properties['abode-channel'] = ['timeline'];
         data.properties.syndication = [
             {
                 'name': 'micro.blog',
@@ -325,54 +230,72 @@ function saveFile(data) {
         ];
     }
 
-    let now = moment(data.date, "YYYY-MM-DD HH:mm:ss ZZ");
-    let year = now.format("YYYY");
-    let month = now.format("MM");
-    let day = now.format("DD");
-    let dataDir = __dirname + '/../../../production/eddiehinkle.com/jekyll/_source';
+    // let now = moment(data.date, "YYYY-MM-DD HH:mm:ss ZZ");
+    // let year = now.format("YYYY");
+    // let month = now.format("MM");
+    // let day = now.format("DD");
+    // let dataDir = __dirname + '/../../../production/eddiehinkle.com/jekyll/_source';
     
-    var postIndex = 1;
-    var yearDir = `${dataDir}/_note/posts/${year}`;
-    if (!fs.existsSync(yearDir)) {
-        fs.mkdirSync(yearDir);
-        console.log(yearDir + " created");
-    }
-    var monthDir = `${yearDir}/${month}`;
-    if (!fs.existsSync(monthDir)) {
-        fs.mkdirSync(monthDir);
-        console.log(monthDir + " created");
-    }
-    var dayDir = `${monthDir}/${day}`;
-    if (!fs.existsSync(dayDir)) {
-        fs.mkdirSync(dayDir);
-        console.log(dayDir + " created");
-    } else {
-        var dirContents = fs.readdirSync(dayDir);
-        dirContents = _.filter(dirContents, (filename) => {
-            return (fs.statSync(dayDir + "/" + filename).isDirectory() && fs.existsSync(`${dayDir}${filename}/post.md`));
-        });
-        postIndex = dirContents.length + 1;
-    }
+    // var postIndex = 1;
+    // var yearDir = `${dataDir}/_note/posts/${year}`;
+    // if (!fs.existsSync(yearDir)) {
+    //     fs.mkdirSync(yearDir);
+    //     console.log(yearDir + " created");
+    // }
+    // var monthDir = `${yearDir}/${month}`;
+    // if (!fs.existsSync(monthDir)) {
+    //     fs.mkdirSync(monthDir);
+    //     console.log(monthDir + " created");
+    // }
+    // var dayDir = `${monthDir}/${day}`;
+    // if (!fs.existsSync(dayDir)) {
+    //     fs.mkdirSync(dayDir);
+    //     console.log(dayDir + " created");
+    // } else {
+    //     var dirContents = fs.readdirSync(dayDir);
+    //     dirContents = _.filter(dirContents, (filename) => {
+    //         return (fs.statSync(dayDir + "/" + filename).isDirectory() && fs.existsSync(`${dayDir}${filename}/post.md`));
+    //     });
+    //     postIndex = dirContents.length + 1;
+    // }
+    //
+    // while(fs.existsSync(`${dayDir}/${postIndex}/post.md`)) {
+    //     postIndex++;
+    // }
+    // fs.mkdirSync(`${dayDir}/${postIndex}`);
+    //
+    // // Set slug number to post index
+    // data.slug = '' + postIndex;
 
-    while(fs.existsSync(`${dayDir}/${postIndex}/post.md`)) {
-        postIndex++;
-    }
-    fs.mkdirSync(`${dayDir}/${postIndex}`);
+    // // Move content out of yaml into the main body
+    // let postContents = data.content;
+    // delete data.content;
 
-    // Set slug number to post index
-    data.slug = '' + postIndex;
+    // var fileData = "---\n" + yaml.safeDump(data, { lineWidth: 800 }) + "---\n" + postContents;
+    //
+    // fs.writeFile(`${dayDir}/${postIndex}/post.md`, fileData, function(err) {
+    //     if(err) {
+    //         return console.log(err);
+    //     }
+    //
+    //     console.log(`Finished saving: ${dayDir}/${postIndex}/post.md`);
+    // });
 
-    // Move content out of yaml into the main body
-    let postContents = data.content;
-    delete data.content;
-
-    var fileData = "---\n" + yaml.safeDump(data, { lineWidth: 800 }) + "---\n" + postContents;
-
-    fs.writeFile(`${dayDir}/${postIndex}/post.md`, fileData, function(err) {
-        if(err) {
-            return console.log(err);
+    request.post(`https://eddiehinkle.com/micropub`, {
+        'auth': {
+            'bearer': `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRfaWQiOiJodHRwczovL3F1aWxsLnAzay5pby8iLCJtZSI6Imh0dHBzOi8vZWRkaWVoaW5rbGUuY29tLyIsImlkIjoxNTM3MjIyNjk1NTM4LCJzY29wZSI6WyJjcmVhdGUiLCJ1cGRhdGUiLCJtZWRpYSJdLCJpYXQiOjE1MzcyMjI2OTV9.FnsWsZJrl6HKQoV5DBAYlFANbBAiHO4vIwlTOb43LEQ`
+        },
+        body: data,
+        json: true
+    }, (err, data) => {
+        if (err != undefined) {
+            console.log(`ERROR: ${err}`);
         }
+        if (data.statusCode !== 201 && data.statusCode !== 202) {
+            console.log("Watch post Micropub error");
+        } else {
+            console.log("Successfully created Micropub request");
+        }
+    });
 
-        console.log(`Finished saving: ${dayDir}/${postIndex}/post.md`);
-    }); 
 }
