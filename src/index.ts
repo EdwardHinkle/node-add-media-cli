@@ -32,7 +32,7 @@ program.option('-t, --type <type>', 'What type of watch post it is')
   .option('--show-finale', 'Mark this post as a show finale') // TV
   .option('-u, --url <url>', 'The url of the given item') // Podcast/Web Video
   .option('-v, --video <video>', 'The url of the video property') // Podcast/Web Video
-  .option('-mb, --microblog', 'Set that this post should syndicate to microblog')
+  .option('--microblog', 'Set that this post should syndicate to microblog')
   .parse(process.argv);
 
 var searchType = program.type;
@@ -329,10 +329,10 @@ function saveFile(data) {
     let year = now.format("YYYY");
     let month = now.format("MM");
     let day = now.format("DD");
-    let dataDir = __dirname + '/../../../abode/jekyll/_source';
+    let dataDir = __dirname + '/../../../production/eddiehinkle.com/jekyll/_source';
     
     var postIndex = 1;
-    var yearDir = `${dataDir}/_note/${year}`;
+    var yearDir = `${dataDir}/_note/posts/${year}`;
     if (!fs.existsSync(yearDir)) {
         fs.mkdirSync(yearDir);
         console.log(yearDir + " created");
