@@ -7,15 +7,18 @@ import * as program from 'commander';
 import * as yaml from 'js-yaml';
 import * as cheerio from 'cheerio';
 import * as request from 'request';
+import { igdb } from 'igdb-api-node';
 
 var config = require('../config.json');
 
 const MovieDB = require('moviedb')(config.moviedb_key);
+// const GameDB = igdb(config.igdb_key);
 const defaultTaskStatus = "finished";
 
 program.option('-t, --type <type>', 'What type of watch post it is')
   .option('-S, --status <status>', 'The status of the watch post: interested, inprogress or finished', /^(interested|inprogress|finished)$/i, defaultTaskStatus) // All
   .option('--private', 'Mark this post as a private post') // All
+  .option('--duration', 'The duration of the activity') // All
   .option('-m, --message <message>', 'This is the message you want to put in the content of the post') // All
   .option('-c, --category <category>', 'These are the categories you want to attach to the post', function list(val) {
       return val.toLowerCase().split(',');
@@ -23,7 +26,7 @@ program.option('-t, --type <type>', 'What type of watch post it is')
   .option('-d, --date [date]', 'This is the date of the watch post', function datetime(val){
     return moment(val, "MMM D, YYYY h:mm A");
   }) // All
-  .option('-n, --name <name>', 'The name of what is being watched') // TV/Movie/Web Video
+  .option('-n, --name <name>', 'The name of what is being watched') // TV/Movie/Web Video/Game
   .option('-s, --season <season>', 'The season number of a tv show', parseInt) // TV
   .option('-e, --episode <episode>', 'The episode number of a tv show', parseInt) // TV
   .option('--season-premiere', 'Mark this post as a season premiere') // TV
@@ -43,10 +46,12 @@ var watchContent = program.message ? program.message : '';
 var postCategory = program.category;
 var postDate = program.date || moment();
 
+
 switch (searchType) {
     case "movie": addMovie(); break;
     case "tv": addTv(); break;
     case "video": addWebVideo(); break;
+//     case "game": addGame(); break;
 }
 
 function addWebVideo() {
